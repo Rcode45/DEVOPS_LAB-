@@ -1,27 +1,30 @@
-# File: .github/workflows/workflow.yml
+name: Python CI
 
-on: push
+on:
+  [push]
+
+env:
+  AZURE_WEBAPP_NAME: webapp45 # Set this to your application's name
+  AZURE_WEBAPP_PACKAGE_PATH: '.' # Set this to the path to your web app project, defaults to the repository root
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-    # checkout the repo
-    - name: 'Checkout Github Action' 
-      uses: actions/checkout@master
-
-    - name: Setup Node 10.x
-      uses: actions/setup-node@v1
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v4
       with:
-        node-version: '10.x'
-    - name: 'npm ci, build, and test'
+        python-version: 3.x
+    - name: Install dependencies
       run: |
-        npm ci
-        npm run build --if-present
-        npm run test --if-present
-
-    - name: 'Run Azure webapp deploy action using publish profile credentials'
-      uses: azure/webapps-deploy@v2
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Building web app
+      uses: azure/appservice-build@v2
+    - name: Deploy web App using GH Action azure/webapps-deploy
+      uses: azure/webapps-deploy@v3
       with:
-        app-name: node-rn
-        publish-profile: ${{ secrets.azureWebAppPublishProfile }}
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
